@@ -1,0 +1,12 @@
+
+build
+include
+bin
+lib
+
+*.so
+*.user
+Makefile
+moc_*
+ui_*
+cmake_install.cmake
