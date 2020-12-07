@@ -13,7 +13,7 @@ class Provider : public QObject
 
     Q_PROPERTY(QVariantList value READ value WRITE setValue NOTIFY valueChanged)
 
-    enum {
+    enum class Values {
         DefaultValuesInTop = 15
     };
 
@@ -21,6 +21,8 @@ public:
     explicit Provider(ParserWrapper &parser, QObject *parent = nullptr);
 
     void run();
+    Q_INVOKABLE void close();
+
     QVariantList value() const;
 
 public slots:

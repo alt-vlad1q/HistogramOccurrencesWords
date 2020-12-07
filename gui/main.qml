@@ -5,7 +5,7 @@ import QtQuick.Controls 2.3
 
 ApplicationWindow {
     visible: true
-    width: 640
+    width: 900
     height: 480
     title: qsTr("Histogram of occurrence of words")
 
@@ -16,6 +16,10 @@ ApplicationWindow {
         onValueChanged: function (value) {
             histogramView.changeWordCount(value[0], value[1])
         }
+    }
+
+    onClosing: {
+        provider.close()
     }
 
     HistogramView {

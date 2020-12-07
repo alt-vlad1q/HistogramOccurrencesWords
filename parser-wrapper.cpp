@@ -1,39 +1,64 @@
 #include "parser-wrapper.hpp"
 
+#include <core/worker-pool.hpp>
+#include <core/facrory-task/factory-grammar-task.hpp>
+#include <core/facrory-task/factory-pure-task.hpp>
+
+#include <thread>
+
 ParserWrapper::ParserWrapper(const std::string &filePath,
-                             bool oneThread,
-                             unsigned short countPage) :
-    mInputSource(filePath, file_type::readonly),
-    mCountBlock(0),
-    mPool(),
+                             unsigned short countPage,
+                             bool singleThread) :
+    mSingleThread(singleThread),
+    mCountPage(countPage),
     mFactoryTask(std::make_unique<core::factory::FactoryPureTask>())
 {
+    start(filePath);
+}
+
+ParserWrapper::~ParserWrapper()
+{
+    stop();
+}
+
+void ParserWrapper::start(const std::string &filePath)
+{
+    mInputSource.open(filePath, file_type::readonly),
     assert(mInputSource.is_open());
     mFileSize = mInputSource.size();
-    mAccumulator = std::make_unique<core::Accumulator>(mFileSize);
+
+    mPool = std::make_unique<core::WorkerPool>(mSingleThread);
+    mAccumulator = std::make_unique<core::Accumulator>();
+
 
     auto accumulator = [this](const core::Accumulator::queue_item_type & item) {
-        mAccumulator->submitData(std::move(item), !mCountBlock ? true : false);
-        mCountBlock--;
+        mAccumulator->submitData(std::move(item));
     };
 
-    auto transmitter = [this, &accumulator, oneThread] (const std::string & chunk) {
+    auto transmitter = [this, &accumulator] (const std::string & chunk) {
         mCountBlock++;
-        if (oneThread)
-            mFactoryTask->generateTask(std::move(chunk), accumulator)();
-        else
-            mPool.submitTask(mFactoryTask->generateTask(std::move(chunk), accumulator));
+        mPool->submitTask(mFactoryTask->generateTask(std::move(chunk), accumulator));
     };
 
+    mFileSeparator = std::make_unique<core::FileSeparator>(mInputSource,
+                                                           mPool->getCountWorkers(),
+                                                           mFactoryTask->separator(),
+                                                           transmitter,
+                                                           mCountPage);
     try {
-        FileSeparator fsep (mInputSource, mFactoryTask->separator(), transmitter, countPage);
+        mAccumulator->start(mFileSeparator->start());
     } catch (const std::length_error & e) {
         std::cerr << "Exception: " << e.what() << std::endl;
     }
 }
 
-ParserWrapper::~ParserWrapper()
+void ParserWrapper::stop()
 {
+    mCountBlock = 0;
+    mFileSeparator.reset(nullptr);
+    mAccumulator.reset(nullptr);
+    mPool.reset(nullptr);
+
     if (mInputSource.is_open()) {
         mInputSource.close();
     }

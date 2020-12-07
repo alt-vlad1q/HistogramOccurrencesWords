@@ -13,8 +13,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     detail::OptionsHandler options {argc, argv};
-    ParserWrapper wrapper {options.filePath, options.oneThread, options.countPage};
-
+    ParserWrapper wrapper {options.filePath, options.countPage, options.singleThread};
     Provider provider {wrapper};
 
     qmlRegisterUncreatableType<Provider>("Provider", 1, 0, "Provider", "");

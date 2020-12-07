@@ -1,30 +1,43 @@
 #pragma once
 
 #include <core/file-separator.hpp>
-#include <core/worker-pool.hpp>
 #include <core/accumulator.hpp>
-#include <core/facrory-task/factory-grammar-task.hpp>
-#include <core/facrory-task/factory-pure-task.hpp>
+
+namespace core {
+    class WorkerPool;
+namespace factory {
+    class FactoryTaskBase;
+}}
 
 class ParserWrapper
 {
 public:
-    using file_type = FileSeparator::file_type;
-    using file_size_type = FileSeparator::size_type;
+    using file_type = core::FileSeparator::file_type;
+    using file_size_type = core::FileSeparator::size_type;
 
     ParserWrapper(const std::string &filePath,
-                  bool oneThread = false,
-                  unsigned short countPage = 1);
+                  unsigned short countPage,
+                  bool singleThread = false);
     ~ParserWrapper();
+    ParserWrapper(const ParserWrapper &) = delete;
+    ParserWrapper(ParserWrapper &&) = delete;
+    ParserWrapper& operator=(const ParserWrapper &other) = delete;
+    ParserWrapper& operator=(ParserWrapper &&other) = delete;
+
+    void start(const std::string &filePath);
+    void stop();
 
     const std::set<core::Accumulator::key_type,
                    core::Accumulator::comp_type> getSubset(unsigned short count);
 private:
     file_type mInputSource;
     file_size_type mFileSize;
-    std::atomic_int mCountBlock;
+    std::atomic_int32_t mCountBlock;
+    bool mSingleThread;
+    unsigned short mCountPage;
 
-    core::WorkerPool mPool;
+    std::unique_ptr<core::WorkerPool> mPool;
+    std::unique_ptr<core::FileSeparator> mFileSeparator;
     std::unique_ptr<core::factory::FactoryTaskBase> mFactoryTask;
     std::unique_ptr<core::Accumulator> mAccumulator;
 };

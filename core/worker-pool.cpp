@@ -1,18 +1,21 @@
 #include "worker-pool.hpp"
 
 #include <cassert>
+#include <iostream>
 
 namespace core {
 
-WorkerPool::WorkerPool() :
-    mCountThreads((std::thread::hardware_concurrency() -
+WorkerPool::WorkerPool(bool singleThread) :
+    mCountThreads(singleThread ? 1 : (std::thread::hardware_concurrency() -
                   static_cast<unsigned int>(WorkerPool::UnderlyingThread::count))),
     mAlive(true)
 {
+    std::cout << "mCountThreads = " << mCountThreads << std::endl;
+
     assert (mCountThreads);
 
     try {
-        for (unsigned number = 0; number < mCountThreads; ++number) {
+        for (unsigned number = 0; number < mCountThreads / 2; ++number) {
             mWorkers.emplace_back(std::thread(&WorkerPool::taskForWorker, this));
         }
     } catch (...) {
@@ -30,6 +33,11 @@ WorkerPool::~WorkerPool() {
             std::cout << "joined" << std::endl;
         }
     }
+}
+
+unsigned short WorkerPool::getCountWorkers()
+{
+    return mCountThreads;
 }
 
 void WorkerPool::submitTask(WorkerPool::task_type task)

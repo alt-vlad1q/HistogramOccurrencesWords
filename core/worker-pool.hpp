@@ -20,16 +20,17 @@ public:
         count = (Reader - Main + 1)
     };
 
-    WorkerPool();
+    WorkerPool(bool singleThread = false);
     ~WorkerPool();
 
+    unsigned short getCountWorkers();
     void submitTask(task_type task);
 
 private:
     void taskForWorker();
 
 private:
-    const unsigned int mCountThreads;
+    const unsigned short mCountThreads;
     std::atomic_bool mAlive;
     ThreadSafeQueue<task_type> mTaskQueue;
     std::vector<std::thread> mWorkers;

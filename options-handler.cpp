@@ -10,9 +10,9 @@ OptionsHandler::OptionsHandler(int &argc, char **argv) :
     desc.add_options()
         ("help,h", "produce help message")
         ("file,f", po::value<std::string>()->default_value(""), "path to the source file")
-        ("onethread", po::bool_switch()->default_value(false),
+        ("singlethread", po::bool_switch()->default_value(false),
          "run main work of applications in one thread")
-        ("countpage,c", po::value<unsigned short>()->default_value(1),
+        ("countpage,c", po::value<unsigned short>()->default_value(0),
          "count page for allocation granularity for virtual memory")
     ;
 
@@ -27,7 +27,7 @@ OptionsHandler::OptionsHandler(int &argc, char **argv) :
 
     filePath = vm["file"].as<std::string>();
     countPage = vm["countpage"].as<unsigned short>();
-    oneThread = vm["onethread"].as<bool>();
+    singleThread = vm["singlethread"].as<bool>();
 }
 
 void OptionsHandler::printHelp() const noexcept

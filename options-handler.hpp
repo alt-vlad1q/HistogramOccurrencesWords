@@ -18,7 +18,7 @@ public:
 
     std::string filePath;
     unsigned short countPage;
-    bool oneThread;
+    bool singleThread;
 };
 
 } //detail

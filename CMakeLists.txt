@@ -23,18 +23,18 @@ add_subdirectory(core)
 
 add_executable(${PROJECT_NAME}
     main.cpp
-    options-handler.cpp
-    provider.cpp
-    parser-wrapper.cpp
     gui/qml.qrc
+    provider.cpp
+    options-handler.cpp
+    parser-wrapper.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     HistogramOccurrencesWordsCore
-    ${Boost_LIBRARIES}
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Quick
     Qt${QT_VERSION_MAJOR}::Widgets
+    ${Boost_LIBRARIES}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

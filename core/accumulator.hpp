@@ -7,7 +7,10 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <condition_variable>
 #include <functional>
+
+#include "multi-index-container.hpp"
 
 namespace core {
 
@@ -20,21 +23,23 @@ public:
     using result_type = std::set<key_type, std::greater<key_type>>;
     using comp_type = std::function<bool(cr_key_type, cr_key_type)>;
 
-    Accumulator(size_t dataSize);
+    Accumulator() = default;
     ~Accumulator();
 
-    void run ();
+    void start (size_t countBlock);
     void stop ();
-    void submitData(const queue_item_type &data, bool lastBlock = false);
-    const std::set<key_type, comp_type> getSubset(unsigned short count);
+    void submitData(const queue_item_type &data);
+    const std::set<key_type, comp_type> getSubset(unsigned short count) const;
+
+    multi_index::Container container;
 
 private:
     void taskForThread ();
 
 private:
-    size_t mDataSize;
     std::atomic_bool mAlive;
-    std::atomic_size_t mProcessedDataCount {0};
+    size_t mCountBlock;
+
     std::thread mWorker;
     ThreadSafeQueue<queue_item_type> mResultsQueue;
     result_type mResults;
