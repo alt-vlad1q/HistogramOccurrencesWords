@@ -8,37 +8,18 @@
 namespace core {
 
 FileSeparator::FileSeparator(file_type &file,
-                             unsigned short countWorkers,
                              const std::string &separator,
                              submit_type submit,
+                             ushort countWorkers,
                              ushort countPage) :
     mAlive(true),
     mInputSource(file),
+    mCountBlocks(0),
     mSeparator(separator),
     mTransmitter(submit)
 {
-    mFileSize = mInputSource.size();
-
-    const auto alignment = file_type::alignment();
-    assert(alignment);
-
-    if (countPage) {
-        mCapacityBlock = countPage;
-    } else {
-        auto countAlignmentPage = mFileSize / alignment;
-        if (countAlignmentPage <= static_cast<ushort>(BlockSettings::CountBlockForSmallFile)) {
-            mCapacityBlock = mFileSize;
-            mCountBlocks = 1;
-        }
-        assert(countWorkers);
-        mCapacityBlock = std::clamp(static_cast<ulong>(countAlignmentPage / countWorkers / 2),
-                                         static_cast<ulong>(BlockSettings::MinimumRange),
-                                         static_cast<ulong>(BlockSettings::MaximumRange));
-    }
-    mCapacityBlock *= alignment;
-    std::cout << "File size = " << mFileSize
-              << " [" << mCapacityBlock
-              << "] count page = " << countPage  << std::endl;
+    preparationFile(countWorkers, countPage);
+    preparationBounds();
 }
 
 FileSeparator::~FileSeparator()
@@ -52,38 +33,64 @@ size_t FileSeparator::countBlocks()
     return mCountBlocks;
 }
 
-size_t FileSeparator::start()
+void FileSeparator::start()
 {
     mAlive = true;
-    return separate();
+    separate();
 }
 
 void FileSeparator::stop()
 {
+    mCountBlocks = 0;
     mAlive = false;
 }
 
-size_t FileSeparator::separate() const {
+void FileSeparator::preparationFile(ushort countWorkers, ushort countPage)
+{
+    mFileSize = mInputSource.size();
+    const auto alignment = file_type::alignment();
+    assert(alignment);
+
+    if (countPage) {
+        mCapacityBlock = countPage * alignment;
+    } else {
+        auto countAlignmentPage = mFileSize / alignment;
+        if (countAlignmentPage <= static_cast<ushort>(BlockSettings::CountBlockForSmallFile)) {
+            mCapacityBlock = mFileSize;
+        } else {
+            assert(countWorkers);
+            mCapacityBlock = std::clamp(static_cast<ulong>(countAlignmentPage / countWorkers / 2),
+                                        static_cast<ulong>(BlockSettings::MinimumRange),
+                                        static_cast<ulong>(BlockSettings::MaximumRange));
+            mCapacityBlock *= alignment;
+        }
+    }
+
+    std::cout << "File size = " << mFileSize
+              << " [" << mCapacityBlock
+              << "] count page = " << countPage  << std::endl;
+}
+
+void FileSeparator::preparationBounds()
+{
     auto begin = mInputSource.const_data();
     const auto end = begin + mInputSource.size();
 
     if (mCapacityBlock == mFileSize) {
-        mTransmitter({begin, end});
-        return 1;
+        ++mCountBlocks;
+        return;
     }
 
-    size_t countBlock {0};
     while (begin < end && mAlive) {
         if (begin >= end - mCapacityBlock) {
-            mTransmitter({begin, end});
-            ++countBlock;
+            ++mCountBlocks;
             break;
         }
         auto endBlock = begin + mCapacityBlock;
         while (endBlock > begin) {
             if (char_type::eq(*endBlock--, mSeparator.front())) {
-                mTransmitter({begin, ++endBlock});
-                ++countBlock;
+                ++endBlock;
+                ++mCountBlocks;
                 break;
             }
         }
@@ -93,7 +100,36 @@ size_t FileSeparator::separate() const {
         }
         begin = ++endBlock;
     }
-    return countBlock;
+}
+
+void FileSeparator::separate() const
+{
+    auto begin = mInputSource.const_data();
+    const auto end = begin + mInputSource.size();
+
+    if (mCapacityBlock == mFileSize) {
+        mTransmitter({begin, end});
+        return;
+    }
+
+    while (begin < end && mAlive) {
+        if (begin >= end - mCapacityBlock) {
+            mTransmitter({begin, end});
+            break;
+        }
+        auto endBlock = begin + mCapacityBlock;
+        while (endBlock > begin) {
+            if (char_type::eq(*endBlock--, mSeparator.front())) {
+                mTransmitter({begin, ++endBlock});
+                break;
+            }
+        }
+        if (endBlock <= begin) {
+            throw (std::length_error("Word size greater then "
+                                     "allocation granularity for virtual memory"));
+        }
+        begin = ++endBlock;
+    }
 }
 
 } // core

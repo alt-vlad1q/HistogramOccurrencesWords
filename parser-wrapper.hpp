@@ -1,5 +1,7 @@
 #pragma once
 
+#include "provider.hpp"
+
 #include <core/file-separator.hpp>
 #include <core/accumulator.hpp>
 
@@ -27,8 +29,8 @@ public:
     void start(const std::string &filePath);
     void stop();
 
-    const std::set<core::Accumulator::key_type,
-                   core::Accumulator::comp_type> getSubset(unsigned short count);
+    Provider &getProvider();
+
 private:
     file_type mInputSource;
     file_size_type mFileSize;
@@ -36,6 +38,7 @@ private:
     bool mSingleThread;
     unsigned short mCountPage;
 
+    Provider mProvider;
     std::unique_ptr<core::WorkerPool> mPool;
     std::unique_ptr<core::FileSeparator> mFileSeparator;
     std::unique_ptr<core::factory::FactoryTaskBase> mFactoryTask;

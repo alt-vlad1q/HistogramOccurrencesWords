@@ -4,5 +4,7 @@
         <file>HistogramView.qml</file>
         <file>main.qml</file>
         <file>qtquickcontrols2.conf</file>
+        <file>colorizer.js</file>
+        <file>ControlBlock.qml</file>
     </qresource>
 </RCC>

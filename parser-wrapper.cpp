@@ -11,6 +11,7 @@ ParserWrapper::ParserWrapper(const std::string &filePath,
                              bool singleThread) :
     mSingleThread(singleThread),
     mCountPage(countPage),
+    mProvider(),
     mFactoryTask(std::make_unique<core::factory::FactoryPureTask>())
 {
     start(filePath);
@@ -24,11 +25,20 @@ ParserWrapper::~ParserWrapper()
 void ParserWrapper::start(const std::string &filePath)
 {
     mInputSource.open(filePath, file_type::readonly),
-    assert(mInputSource.is_open());
+            assert(mInputSource.is_open());
     mFileSize = mInputSource.size();
 
     mPool = std::make_unique<core::WorkerPool>(mSingleThread);
-    mAccumulator = std::make_unique<core::Accumulator>();
+
+    auto visualize = [this](core::Accumulator::extracts_map map) {
+        mProvider.run(std::move(map));
+    };
+
+    auto progress = [this](ushort value) {
+        mProvider.setCompletedPercent(value);
+    };
+
+    mAccumulator = std::make_unique<core::Accumulator>(visualize, progress);
 
 
     auto accumulator = [this](const core::Accumulator::queue_item_type & item) {
@@ -40,16 +50,20 @@ void ParserWrapper::start(const std::string &filePath)
         mPool->submitTask(mFactoryTask->generateTask(std::move(chunk), accumulator));
     };
 
-    mFileSeparator = std::make_unique<core::FileSeparator>(mInputSource,
-                                                           mPool->getCountWorkers(),
-                                                           mFactoryTask->separator(),
-                                                           transmitter,
-                                                           mCountPage);
     try {
-        mAccumulator->start(mFileSeparator->start());
+        mFileSeparator = std::make_unique<core::FileSeparator>(mInputSource,
+                                                               mFactoryTask->separator(),
+                                                               transmitter,
+                                                               mPool->getCountWorkers(),
+                                                               mCountPage);
     } catch (const std::length_error & e) {
         std::cerr << "Exception: " << e.what() << std::endl;
     }
+
+    mAccumulator->start(mFileSeparator->countBlocks());
+    std::cout << "blocks"  << mFileSeparator->countBlocks() << std::endl;
+
+    mFileSeparator->start();
 }
 
 void ParserWrapper::stop()
@@ -64,9 +78,7 @@ void ParserWrapper::stop()
     }
 }
 
-const std::set<core::Accumulator::key_type,
-               core::Accumulator::comp_type> ParserWrapper::getSubset(unsigned short count)
-{
-    return mAccumulator->getSubset(count);
+Provider &ParserWrapper::getProvider() {
+    return mProvider;
 }
 

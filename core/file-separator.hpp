@@ -23,24 +23,28 @@ public:
     using submit_type = std::function<void(const std::string &)>;
 
     FileSeparator (file_type &file,
-                   unsigned short countWorkers,
                    const std::string &separator,
                    submit_type submit,
+                   ushort countWorkers,
                    ushort countPage);
     ~FileSeparator();
 
     size_t countBlocks ();
-    size_t start();
+    void start();
     void stop ();
 
 private:
-    size_t separate() const;
+    void preparationFile(ushort countWorkers, ushort countPage);
+    void preparationBounds();
+    void separate() const;
 
 private:
     std::atomic_bool mAlive;
     file_type &mInputSource;
     size_type mFileSize;
     size_t mCountBlocks;
+
+
     std::string mSeparator;
     submit_type mTransmitter;
     size_type mCapacityBlock;

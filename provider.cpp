@@ -2,34 +2,31 @@
 
 #include <QTimer>
 
-Provider::Provider(ParserWrapper &parser, QObject *parent) :
-    QObject(parent),
-    mParserWrapper(parser)
-{
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &Provider::run,
-                                           Qt::ConnectionType::QueuedConnection);
-    timer->start(100);
-}
+Provider::Provider(QObject *parent) :
+    QObject(parent)
+{}
 
-void Provider::run()
+void Provider::run(std::map<std::string, size_t> words)
 {
-    const auto &words = mParserWrapper.getSubset(static_cast<ushort>
-                                                 (Values::DefaultValuesInTop));
     for (const auto & word : words) {
-        setValue(QVariantList() << QString::fromStdString(word.second)
-                                << static_cast<qulonglong>(word.first));
+        setValue(QVariantList() << QString::fromStdString(word.first)
+                 << static_cast<qulonglong>(word.second));
     }
 }
 
 void Provider::close()
 {
-    mParserWrapper.stop();
+    //    mParserWrapper.stop();
 }
 
 QVariantList Provider::value() const
 {
     return m_value;
+}
+
+ushort Provider::completedPercent() const
+{
+    return m_completedPercent;
 }
 
 void Provider::setValue(QVariantList value)
@@ -39,4 +36,13 @@ void Provider::setValue(QVariantList value)
 
     m_value = value;
     emit valueChanged(m_value);
+}
+
+void Provider::setCompletedPercent(ushort completedPercent)
+{
+    if (m_completedPercent == completedPercent)
+        return;
+
+    m_completedPercent = completedPercent;
+    emit completedPercentChanged(m_completedPercent);
 }

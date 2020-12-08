@@ -6,15 +6,11 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
-
 int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
-
     detail::OptionsHandler options {argc, argv};
-    ParserWrapper wrapper {options.filePath, options.countPage, options.singleThread};
-    Provider provider {wrapper};
 
     qmlRegisterUncreatableType<Provider>("Provider", 1, 0, "Provider", "");
 
@@ -26,7 +22,9 @@ int main(int argc, char *argv[])
             QApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine.load(url);
+    ParserWrapper wrapper {options.filePath, options.countPage, options.singleThread};
     engine.rootObjects().first()->setProperty("provider",
-                                              QVariant::fromValue(qobject_cast<QObject *> (&provider)));
+                                              QVariant::fromValue(qobject_cast<QObject *>
+                                                                  (&wrapper.getProvider())));
     return app.exec();
 }
