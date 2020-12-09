@@ -27,7 +27,7 @@ public:
     ParserWrapper& operator=(ParserWrapper &&other) = delete;
 
     void start(const std::string &filePath);
-    void stop();
+    bool stop();
 
     Provider &getProvider();
 

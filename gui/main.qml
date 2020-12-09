@@ -1,10 +1,7 @@
 import Provider 1.0
-import QtQml 2.12
-import QtQuick 2.11
-import QtCharts 2.2
-import QtQuick.Dialogs 1.2
+import QtQml 2.3
 import QtQuick.Controls 2.3
-import QtQuick.Layouts 1.12
+import QtQuick.Layouts 1.3
 
 ApplicationWindow {
     visible: true
@@ -13,15 +10,40 @@ ApplicationWindow {
     title: qsTr("Histogram of occurrence of words")
 
     property Provider provider: null
-    property alias progressValue: controlBlock.value
+    property alias progressValue: controlBlock.progressValue
+    property alias labelText: controlBlock.choiceBarText
+    property alias barText: histogramView.barText
+
+    onBarTextChanged: {
+        labelText = barText
+    }
+
+    onProviderChanged: {
+        controlBlock.provider = provider
+    }
+
+//    Connections {
+//        id: wordsUpdate
+//        target: provider
+//        onValueChanged: function (value) {
+//            histogramView.changeWordCount(value[0], value[1])
+//            histogramView.rescale()
+//            histogramView.colorize()
+//        }
+//    }
 
     Connections {
+        id: wordsUpdate
         target: provider
-        onValueChanged: function (value) {
-            histogramView.changeWordCount(value[0], value[1])
+        onMapChanged: function (map) {
+            histogramView.changeWordCountbyMap(map)
+//            histogramView.rescale()
+            histogramView.colorize()
         }
     }
+
     Connections {
+        id: percentUpdate
         target: provider
         onCompletedPercentChanged: function (value) {
             progressValue = value
@@ -29,7 +51,7 @@ ApplicationWindow {
     }
 
     onClosing: {
-        provider.close()
+        provider.stop()
     }
 
     ColumnLayout {
@@ -38,8 +60,11 @@ ApplicationWindow {
 
         ControlBlock {
             id: controlBlock
+            chartView: histogramView
+            refWordUpdate: wordsUpdate
+            refPercentUpdate: percentUpdate
             Layout.alignment: Qt.AlignCenter
-            Layout.preferredHeight: parent.width * 0.05
+            Layout.preferredHeight: parent.width * 0.06
             Layout.preferredWidth: parent.width * 0.9
             Layout.topMargin: 10
         }

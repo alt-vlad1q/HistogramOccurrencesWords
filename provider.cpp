@@ -1,48 +1,69 @@
 #include "provider.hpp"
 
-#include <QTimer>
+#include <QUrl>
+#include <QFile>
+#include <QMetaObject>
+#include <QDebug>
 
-Provider::Provider(QObject *parent) :
-    QObject(parent)
+Provider::Provider(start_func start, stop_func stop, QObject *parent) :
+    QObject(parent),
+    mStart(start),
+    mStop(stop)
 {}
 
-void Provider::run(std::map<std::string, size_t> words)
+void Provider::deliver(word_map words)
 {
-    for (const auto & word : words) {
-        setValue(QVariantList() << QString::fromStdString(word.first)
-                 << static_cast<qulonglong>(word.second));
-    }
+    [this, words] {
+        for (const auto & [word, count] : words) {
+            const auto variantList = QVariantList() << QString::fromStdString(word)
+                                                    << static_cast<qulonglong>(count);
+            QMetaObject::invokeMethod(this,
+                                      "valueChanged",
+                                      Qt::QueuedConnection,
+                                      Q_ARG(QVariantList, variantList));
+        }
+    } ();
 }
 
-void Provider::close()
+void Provider::deliverMap(word_map words)
 {
-    //    mParserWrapper.stop();
+    [this, words] {
+        for (const auto & [word, count] : words) {
+            m_map.insert(QString::fromStdString(word), QVariant::fromValue(count));
+        }
+        QMetaObject::invokeMethod(this,
+                                  "mapChanged",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QVariantMap, m_map));
+    } ();
 }
 
-QVariantList Provider::value() const
+void Provider::progress(ushort percent)
 {
-    return m_value;
+    [this, percent] {
+        QMetaObject::invokeMethod(this,
+                                  "completedPercentChanged",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(ushort, percent));
+    } ();
 }
 
-ushort Provider::completedPercent() const
+QString Provider::start(const QUrl & path) const
 {
-    return m_completedPercent;
+    const auto pathFile = path.toLocalFile();
+    QFile file {pathFile};
+    if (!file.open(QIODevice::ReadOnly))
+        return {"Error opennig file."};
+    if (!file.size())
+        return {"File is empty."};
+    file.close();
+
+    mStart(pathFile.toStdString());
+
+    return {};
 }
 
-void Provider::setValue(QVariantList value)
+bool Provider::stop() const
 {
-    if (m_value == value)
-        return;
-
-    m_value = value;
-    emit valueChanged(m_value);
-}
-
-void Provider::setCompletedPercent(ushort completedPercent)
-{
-    if (m_completedPercent == completedPercent)
-        return;
-
-    m_completedPercent = completedPercent;
-    emit completedPercentChanged(m_completedPercent);
+    return mStop();
 }

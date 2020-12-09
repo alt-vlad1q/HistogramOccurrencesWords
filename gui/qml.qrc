@@ -6,5 +6,11 @@
         <file>qtquickcontrols2.conf</file>
         <file>colorizer.js</file>
         <file>ControlBlock.qml</file>
+        <file>ImageButton.qml</file>
+        <file>img/choice.svg</file>
+        <file>img/stop.svg</file>
+        <file>img/play.svg</file>
+        <file>MessageBox.qml</file>
+        <file>functions.js</file>
     </qresource>
 </RCC>

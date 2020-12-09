@@ -29,6 +29,10 @@ void Accumulator::start(size_t countBlock)
 void Accumulator::stop()
 {
     mAlive = false;
+
+    std::cout << "mAlive = " << mAlive << std::endl;
+    std::cout << "queue size = " << mResultsQueue.size() <<  std::endl;
+
     if (mWorker.joinable()) {
         std::cout << "Reader thread [" << mWorker.get_id();
         mWorker.join();
@@ -44,7 +48,7 @@ Accumulator::extracts_map Accumulator::getSubset(unsigned short count) const
 
     extracts_map result {};
     // FIXME: check last element
-    for (int i = 0; begin != end && i < 15; ++i, ++begin)
+    for (int i = 0; begin != end && i < count; ++i, ++begin)
     {
         result.emplace(begin->word, begin->count);
     }
@@ -61,11 +65,11 @@ Accumulator::extracts_map Accumulator::getSubset(unsigned short count) const
 void Accumulator::taskForThread()
 {
     queue_item_type items;
-
     auto countBlock = mCountBlock;
 
-    while(mAlive && countBlock--) {
-        mResultsQueue.wait_and_pop(items);
+    while(mAlive && countBlock) {
+        if (!mResultsQueue.try_pop(items))
+            continue;
 
         for (const auto & [word, count]: items) {
             auto & byWordContainer(container.get<multi_index::Element::ByWord>());
@@ -74,14 +78,13 @@ void Accumulator::taskForThread()
                 element.count += c;
             });
         }
+        --countBlock;
         mVisualizer(getSubset(15));
         mProgress(static_cast<ushort>(100 - countBlock * 100 / mCountBlock));
-        std::cout << "finished " << countBlock << " [" << mCountBlock << "] " << (100 - countBlock * 100 / mCountBlock) << std::endl;
     }
-    std::cout << "finished" << std::endl;
-    for (const auto & word : getSubset(15)) {
-        std::cout << word.first << " " << word.second << std::endl;
-    }
+//    for (const auto & word : getSubset(15)) {
+//        std::cout << word.first << " " << word.second << std::endl;
+//    }
 }
 
 } // core

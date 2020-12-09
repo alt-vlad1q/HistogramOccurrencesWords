@@ -11,10 +11,11 @@ ParserWrapper::ParserWrapper(const std::string &filePath,
                              bool singleThread) :
     mSingleThread(singleThread),
     mCountPage(countPage),
-    mProvider(),
+    mProvider([this](const std::string &filePath){start(filePath);}, [this]{return stop();}),
     mFactoryTask(std::make_unique<core::factory::FactoryPureTask>())
 {
-    start(filePath);
+    (void)filePath;
+//    start(filePath);
 }
 
 ParserWrapper::~ParserWrapper()
@@ -31,11 +32,11 @@ void ParserWrapper::start(const std::string &filePath)
     mPool = std::make_unique<core::WorkerPool>(mSingleThread);
 
     auto visualize = [this](core::Accumulator::extracts_map map) {
-        mProvider.run(std::move(map));
+        mProvider.deliverMap(std::move(map));
     };
 
     auto progress = [this](ushort value) {
-        mProvider.setCompletedPercent(value);
+        mProvider.progress(value);
     };
 
     mAccumulator = std::make_unique<core::Accumulator>(visualize, progress);
@@ -61,21 +62,22 @@ void ParserWrapper::start(const std::string &filePath)
     }
 
     mAccumulator->start(mFileSeparator->countBlocks());
-    std::cout << "blocks"  << mFileSeparator->countBlocks() << std::endl;
-
     mFileSeparator->start();
 }
 
-void ParserWrapper::stop()
+bool ParserWrapper::stop()
 {
     mCountBlock = 0;
+
+    mPool.reset(nullptr);
     mFileSeparator.reset(nullptr);
     mAccumulator.reset(nullptr);
-    mPool.reset(nullptr);
 
     if (mInputSource.is_open()) {
         mInputSource.close();
     }
+
+    return true;
 }
 
 Provider &ParserWrapper::getProvider() {

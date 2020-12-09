@@ -1,11 +1,10 @@
 import "colorizer.js" as Colorizer
-import QtQml 2.11
-import QtQuick 2.11
 import QtCharts 2.2
-import QtQuick.Controls 2.3
 
 ChartView {
     property int countBar: 15
+    property var barText
+
     id: histogramView
 
     HorizontalBarSeries {
@@ -14,28 +13,58 @@ ChartView {
         onHovered: {
             if (status == true) {
                 barset.color = Qt.darker(barset.color, 3)
+                barText = qsTr("<b>" + barset.label + "</b> : <i>" + barset.values[0] + "</i>")
             } else {
                 barset.color = Qt.lighter(barset.color, 3)
+                barText = qsTr("")
             }
-            console.log(barset.label)
         }
         barWidth: 1
         axisY: BarCategoryAxis { categories: [" "] }
-        axisX: ValueAxis { id: valueAxis; labelFormat: "%d";}
+        axisX: ValueAxis { id: valueAxis; labelFormat: "%d"; max: 5000}
     }
 
     function changeWordCount(label, value) {
-        if (barSeries.count < countBar)
-            barSeries.insert(barSeries.count + 1, label, [value])
+        if (barSeries.count < countBar) {
+            barSeries.append(label, [value])
+            return
+        }
+        var less = [0, barSeries.at(0).values[0]]
         for (var i = 0; i < barSeries.count; i++) {
-            barSeries.at(i).color = Colorizer.colorizer(i)
             if (barSeries.at(i).label === label) {
                 barSeries.at(i).remove(0);
                 barSeries.at(i).append(value);
-                break
+                return
             }
+            if (barSeries.at(i).values[0] < less[1])
+                less = [i, barSeries.at(i).values[0]]
         }
-        rescale();
+        if (less[1] < value) {
+            barSeries.remove(barSeries.at(less[0]))
+            for (var j = 0; j < barSeries.count; j++) {
+                if(barSeries.at(j).label > label) {
+                    barSeries.insert(j, label, [value])
+                    return
+                }
+            }
+            barSeries.append(label, [value])
+        }
+    }
+
+    function changeWordCountbyMap(map) {
+
+        console.log("before = ", barSeries.count)
+
+//        for (var i = 0; i < barSeries.count; i++) {
+//            barSeries.clear()
+//        }
+        console.log("after = ", barSeries.count)
+
+        for (var prop in map) {
+            var value = map[prop]
+            barSeries.insert(barSeries.count, prop, [value])
+//            console.log("Object item:", prop, "=", map[prop])
+        }
     }
 
     function rescale() {
@@ -45,8 +74,19 @@ ChartView {
             if (count > max)
                 max = count
         }
+
+
         if (valueAxis.max !== max)
             valueAxis.max = max;
+    }
 
+    function colorize() {
+        for (var i = 0; i < barSeries.count; i++) {
+            barSeries.at(i).color = Colorizer.colorizer(i)
+        }
+    }
+
+    function clearAllWords() {
+        barSeries.clear()
     }
 }
