@@ -53,9 +53,10 @@ void FileSeparator::preparationFile(ushort countWorkers, ushort countPage)
             mCapacityBlock = mFileSize;
         } else {
             assert(countWorkers);
-            mCapacityBlock = std::clamp(static_cast<ulong>(countAlignmentPage / countWorkers / 2),
-                                        static_cast<ulong>(BlockSettings::MinimumRange),
-                                        static_cast<ulong>(BlockSettings::MaximumRange));
+            mCapacityBlock = std::clamp(static_cast<unsigned long>(countAlignmentPage /
+                                                                   countWorkers / 2),
+                                        static_cast<unsigned long>(BlockSettings::MinimumRange),
+                                        static_cast<unsigned long>(BlockSettings::MaximumRange));
             mCapacityBlock *= alignment;
         }
     }
