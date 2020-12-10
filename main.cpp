@@ -10,6 +10,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
+    app.setOrganizationName("personal");
+    app.setOrganizationDomain("personal");
     detail::OptionsHandler options {argc, argv};
 
     qmlRegisterUncreatableType<Provider>("Provider", 1, 0, "Provider", "");
@@ -22,7 +24,7 @@ int main(int argc, char *argv[])
             QApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine.load(url);
-    ParserWrapper wrapper {options.filePath, options.countPage, options.singleThread};
+    ParserWrapper wrapper {options.countPage, options.singleThread};
     engine.rootObjects().first()->setProperty("provider",
                                               QVariant::fromValue(qobject_cast<QObject *>
                                                                   (&wrapper.getProvider())));

@@ -4,6 +4,8 @@
 
 namespace core { namespace factory {
 
+//! \brief The FactoryPureTask final class
+//! \details Делит блок на слова по пробелу
 class FactoryPureTask final : public FactoryTaskBase {
 public:
     FactoryPureTask() = default;

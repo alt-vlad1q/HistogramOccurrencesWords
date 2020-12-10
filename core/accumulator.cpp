@@ -2,7 +2,7 @@
 
 namespace core {
 
-Accumulator::Accumulator(Accumulator::visualize_type visualize, progress_type progress) :
+Accumulator::Accumulator(visualize_type visualize, progress_type progress) :
     mVisualizer(visualize),
     mProgress(progress)
 {}
@@ -10,10 +10,9 @@ Accumulator::Accumulator(Accumulator::visualize_type visualize, progress_type pr
 Accumulator::~Accumulator()
 {
     stop();
-    std::cout << "dest Accumulator" << std::endl;
 }
 
-void Accumulator::submitData(const Accumulator::queue_item_type &data)
+void Accumulator::submitData(const queue_item_type &data)
 {
     mResultsQueue.emplace(std::move(data));
 }
@@ -30,35 +29,21 @@ void Accumulator::stop()
 {
     mAlive = false;
 
-    std::cout << "mAlive = " << mAlive << std::endl;
-    std::cout << "queue size = " << mResultsQueue.size() <<  std::endl;
-
     if (mWorker.joinable()) {
-        std::cout << "Reader thread [" << mWorker.get_id();
         mWorker.join();
-        std::cout << "] was joined" << std::endl;
     }
 }
 
-Accumulator::extracts_map Accumulator::getSubset(unsigned short count) const
+Accumulator::extracts_map Accumulator::getSubset(ushort count) const
 {
-    const auto & byCount(container.get<multi_index::Element::ByCount>());
-    auto begin(byCount.rbegin());
-    const auto end(byCount.rend());
-
+    const auto & byCount {container.get<multi_index::Element::ByCount>()};
+    auto begin {byCount.rbegin()};
+    const auto end {byCount.rend()};
     extracts_map result {};
-    // FIXME: check last element
-    for (int i = 0; begin != end && i < count; ++i, ++begin)
-    {
+    for (int i = 0; begin != end && i < count; ++i, ++begin) {
         result.emplace(begin->word, begin->count);
     }
     return result;
-
-//    std::unique_lock<std::mutex> lk(mut);
-//    const auto first = mResults.cbegin();
-//    const auto secont = std::next(first, count < mResults.size() ? count : mResults.size());
-
-//    return {first, secont, comp};
 }
 
 
@@ -79,12 +64,9 @@ void Accumulator::taskForThread()
             });
         }
         --countBlock;
-        mVisualizer(getSubset(15));
+        mVisualizer(getSubset());
         mProgress(static_cast<ushort>(100 - countBlock * 100 / mCountBlock));
     }
-//    for (const auto & word : getSubset(15)) {
-//        std::cout << word.first << " " << word.second << std::endl;
-//    }
 }
 
 } // core

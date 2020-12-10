@@ -14,7 +14,7 @@ OptionsHandler::OptionsHandler(int &argc, char **argv) :
          "run main work of applications in one thread")
         ("countpage,c", po::value<unsigned short>()->default_value(0),
          "count page for allocation granularity for virtual memory")
-    ;
+        ;
 
     po::store(po::parse_command_line(argc, argv, desc), vm);
 

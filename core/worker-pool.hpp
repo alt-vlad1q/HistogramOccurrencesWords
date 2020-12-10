@@ -5,10 +5,11 @@
 #include <atomic>
 #include <thread>
 #include <functional>
-#include <iostream>
 
 namespace core {
 
+//! \brief The WorkerPool class
+//! \details Пул потоков, которые, выполняют задачи из очереди
 class WorkerPool
 {
 public:
@@ -22,8 +23,12 @@ public:
 
     WorkerPool(bool singleThread = false);
     ~WorkerPool();
+    WorkerPool(const WorkerPool &) = delete;
+    WorkerPool(WorkerPool &&) = delete;
+    WorkerPool& operator=(const WorkerPool &other) = delete;
+    WorkerPool& operator=(WorkerPool &&other) = delete;
 
-    unsigned short getCountWorkers();
+    unsigned short getCountWorkers() const;
     void submitTask(task_type task);
 
 private:

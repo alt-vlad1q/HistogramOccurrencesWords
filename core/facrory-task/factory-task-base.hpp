@@ -5,6 +5,8 @@
 
 namespace core { namespace factory {
 
+//! \brief The FactoryTaskBase class - Интерфейс генерации задач (для WorkerPool)
+//! с последующей отправкой на слияние (в Accumulator)
 class FactoryTaskBase {
 public:
     using task_type = std::function<void()>;

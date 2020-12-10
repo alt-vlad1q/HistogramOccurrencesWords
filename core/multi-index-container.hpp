@@ -19,6 +19,8 @@ struct Element {
     struct ByCount{};
 };
 
+//! \brief Container - boost::multi_index_container
+//! \details sorting by count
 using Container =
     boost::multi_index_container<Element, boost::multi_index::indexed_by<
     boost::multi_index::hashed_unique<boost::multi_index::tag<Element::ByWord>, boost::multi_index::member<Element,std::string, &Element::word>>,

@@ -1,5 +1,5 @@
-import QtQuick.Controls 2.1
-import QtQuick.Controls.impl 2.4
+import QtQuick.Controls 2.12
+import QtQuick.Controls.impl 2.12
 
 Button {
     property var imageSource

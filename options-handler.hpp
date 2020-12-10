@@ -6,6 +6,8 @@ namespace detail {
 
 namespace po = boost::program_options;
 
+//! \brief The OptionsHandler class
+//! \details Class for handle comand line arguments
 class OptionsHandler
 {
     po::options_description desc;

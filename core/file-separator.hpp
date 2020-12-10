@@ -3,11 +3,12 @@
 #include <memory>
 
 #include <boost/iostreams/device/mapped_file.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/code_converter.hpp>
 
 namespace core {
 
+//! \brief The FileSeparator class
+//! \details Класс разделяющий файл на блоки с учётом слов.
+//! Отправляет блоки в очередь пула потоков
 class FileSeparator {
 
     enum class BlockSettings {
@@ -28,23 +29,24 @@ public:
                    ushort countWorkers,
                    ushort countPage);
     ~FileSeparator();
+    FileSeparator(const FileSeparator &) = delete;
+    FileSeparator(FileSeparator &&) = delete;
+    FileSeparator& operator=(const FileSeparator &other) = delete;
+    FileSeparator& operator=(FileSeparator &&other) = delete;
 
-    size_t countBlocks ();
+    size_t countBlocks () const;
     void start();
     void stop ();
 
 private:
     void preparationFile(ushort countWorkers, ushort countPage);
-    void preparationBounds();
-    void separate() const;
+    void separate(bool preparation = false);
 
 private:
     std::atomic_bool mAlive;
     file_type &mInputSource;
     size_type mFileSize;
     size_t mCountBlocks;
-
-
     std::string mSeparator;
     submit_type mTransmitter;
     size_type mCapacityBlock;

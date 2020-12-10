@@ -1,7 +1,6 @@
 #include "worker-pool.hpp"
 
 #include <cassert>
-#include <iostream>
 
 namespace core {
 
@@ -10,12 +9,10 @@ WorkerPool::WorkerPool(bool singleThread) :
                   static_cast<unsigned int>(WorkerPool::UnderlyingThread::count))),
     mAlive(true)
 {
-    std::cout << "mCountThreads = " << mCountThreads << std::endl;
-
     assert (mCountThreads);
 
     try {
-        for (unsigned number = 0; number < mCountThreads / 2; ++number) {
+        for (unsigned number = 0; number < mCountThreads; ++number) {
             mWorkers.emplace_back(std::thread(&WorkerPool::taskForWorker, this));
         }
     } catch (...) {
@@ -28,14 +25,12 @@ WorkerPool::~WorkerPool() {
     mAlive = false;
     for (auto & worker : mWorkers) {
         if (worker.joinable()) {
-            std::cout << "worker [" << worker.get_id() << "] ";
             worker.join();
-            std::cout << "joined" << std::endl;
         }
     }
 }
 
-unsigned short WorkerPool::getCountWorkers()
+unsigned short WorkerPool::getCountWorkers() const
 {
     return mCountThreads;
 }

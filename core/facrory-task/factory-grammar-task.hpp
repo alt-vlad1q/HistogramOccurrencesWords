@@ -4,6 +4,8 @@
 
 namespace core { namespace factory {
 
+//! \brief The FactoryGrammarTask final class
+//! \details Делит блок на строки и удаляет символы пунктуации
 class FactoryGrammarTask final : public FactoryTaskBase {
 public:
     FactoryGrammarTask() = default;

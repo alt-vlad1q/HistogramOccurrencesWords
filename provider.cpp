@@ -2,8 +2,6 @@
 
 #include <QUrl>
 #include <QFile>
-#include <QMetaObject>
-#include <QDebug>
 
 Provider::Provider(start_func start, stop_func stop, QObject *parent) :
     QObject(parent),
@@ -11,41 +9,25 @@ Provider::Provider(start_func start, stop_func stop, QObject *parent) :
     mStop(stop)
 {}
 
-void Provider::deliver(word_map words)
-{
-    [this, words] {
-        for (const auto & [word, count] : words) {
-            const auto variantList = QVariantList() << QString::fromStdString(word)
-                                                    << static_cast<qulonglong>(count);
-            QMetaObject::invokeMethod(this,
-                                      "valueChanged",
-                                      Qt::QueuedConnection,
-                                      Q_ARG(QVariantList, variantList));
-        }
-    } ();
-}
-
 void Provider::deliverMap(word_map words)
 {
-    [this, words] {
-        for (const auto & [word, count] : words) {
-            m_map.insert(QString::fromStdString(word), QVariant::fromValue(count));
-        }
-        QMetaObject::invokeMethod(this,
-                                  "mapChanged",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(QVariantMap, m_map));
-    } ();
+    QVariantMap map;
+    for (const auto & [word, count] : words) {
+        map.insert(QString::fromStdString(word), static_cast<qulonglong>(count));
+    }
+
+    QMetaObject::invokeMethod(this,
+                              "setMap",
+                              Qt::QueuedConnection,
+                              Q_ARG(QVariantMap, map));
 }
 
 void Provider::progress(ushort percent)
 {
-    [this, percent] {
-        QMetaObject::invokeMethod(this,
-                                  "completedPercentChanged",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(ushort, percent));
-    } ();
+    QMetaObject::invokeMethod(this,
+                              "setCompletedPercent",
+                              Qt::QueuedConnection,
+                              Q_ARG(ushort, percent));
 }
 
 QString Provider::start(const QUrl & path) const
@@ -63,7 +45,29 @@ QString Provider::start(const QUrl & path) const
     return {};
 }
 
-bool Provider::stop() const
+void Provider::stop() const
 {
-    return mStop();
+    mStop();
+}
+
+QVariantMap Provider::map() const
+{
+    return m_map;
+}
+
+ushort Provider::completedPercent() const
+{
+    return m_completedPercent;
+}
+
+void Provider::setMap(QVariantMap map)
+{
+    m_map = map;
+    emit mapChanged(m_map);
+}
+
+void Provider::setCompletedPercent(ushort completedPercent)
+{
+    m_completedPercent = completedPercent;
+    emit completedPercentChanged(m_completedPercent);
 }

@@ -1,7 +1,7 @@
 import Provider 1.0
-import QtQml 2.3
-import QtQuick.Controls 2.3
-import QtQuick.Layouts 1.3
+import QtQml 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 ApplicationWindow {
     visible: true
@@ -9,7 +9,7 @@ ApplicationWindow {
     height: 620
     title: qsTr("Histogram of occurrence of words")
 
-    property Provider provider: null
+    property Provider provider
     property alias progressValue: controlBlock.progressValue
     property alias labelText: controlBlock.choiceBarText
     property alias barText: histogramView.barText
@@ -22,23 +22,11 @@ ApplicationWindow {
         controlBlock.provider = provider
     }
 
-//    Connections {
-//        id: wordsUpdate
-//        target: provider
-//        onValueChanged: function (value) {
-//            histogramView.changeWordCount(value[0], value[1])
-//            histogramView.rescale()
-//            histogramView.colorize()
-//        }
-//    }
-
     Connections {
         id: wordsUpdate
         target: provider
         onMapChanged: function (map) {
             histogramView.changeWordCountbyMap(map)
-//            histogramView.rescale()
-            histogramView.colorize()
         }
     }
 
@@ -64,8 +52,8 @@ ApplicationWindow {
             refWordUpdate: wordsUpdate
             refPercentUpdate: percentUpdate
             Layout.alignment: Qt.AlignCenter
-            Layout.preferredHeight: parent.width * 0.06
-            Layout.preferredWidth: parent.width * 0.9
+            Layout.preferredHeight: parent.height * 0.15
+            Layout.preferredWidth: parent.width * 0.95
             Layout.topMargin: 10
         }
 
@@ -73,7 +61,7 @@ ApplicationWindow {
             id: histogramView
             Layout.alignment: Qt.AlignBottom
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: parent.height * 0.85
         }
     }
 }

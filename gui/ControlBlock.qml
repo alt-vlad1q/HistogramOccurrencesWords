@@ -1,19 +1,22 @@
 import Provider 1.0
 import "functions.js" as Js
-import QtQml 2.3
-import QtQuick 2.11
-import QtQuick.Controls 2.3
-import QtQuick.Dialogs 1.1
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.2
+import QtQuick.Layouts 1.12
 
 Item {
-    property Provider provider: null
+    property Provider provider
     property HistogramView chartView
     property Connections refWordUpdate
     property Connections refPercentUpdate
     property double timeMs : 0
     property alias progressValue: progressBar.value
     property alias choiceBarText: labelText.text
+    property int buttonWidth: parent.width * 0.05 > 40
+                              ? 40 : parent.width * 0.05
+    property int buttonHeight: rowLayout.height > 40
+                               ? 40 : rowLayout.height
     property color foreGround: Qt.rgba(0.26, 0.67, 0.55, 1)
     property color buttonImageColor: Qt.rgba(0, 0, 0, 0.5)
 
@@ -24,14 +27,13 @@ Item {
 
     onProgressValueChanged: {
         if (progressValue === progressBar.to) {
-            if (provider.stop()) {
-                connectEnabled(false)
-                playButton.enabled = true
-                stopButton.enabled = false
-                choiceButton.enabled = true
-                var interval = Js.convertMs(new Date().getTime() - timeMs)
-                elapsedTime.text = "<b>Elapsed time</b> : " + Js.makeStringByInterval(interval)
-            }
+            provider.stop()
+            connectEnabled(false)
+            playButton.enabled = true
+            stopButton.enabled = false
+            choiceButton.enabled = true
+            var interval = Js.convertMs(new Date().getTime() - timeMs)
+            elapsedTime.text = "<b>Elapsed time</b> : " + Js.makeStringByInterval(interval)
         }
     }
 
@@ -63,18 +65,23 @@ Item {
         anchors.fill: parent
 
         RowLayout {
+            id: rowLayout
             width: parent.width
+            Layout.preferredHeight: parent.height * 0.7
 
             TextField {
                 id: pathField
                 enabled: false
+                clip: true
+                Layout.preferredHeight: buttonHeight
                 Layout.fillWidth: true
                 placeholderText: fileDialog.title
             }
 
             ImageButton {
                 id : choiceButton
-                Layout.preferredWidth: parent.width * 0.05
+                Layout.preferredHeight: buttonHeight
+                Layout.preferredWidth: buttonWidth
                 imageSource: "img/choice.svg"
                 imageColor: buttonImageColor
                 onClicked: fileDialog.open();
@@ -82,23 +89,24 @@ Item {
 
             ImageButton {
                 id : playButton
-                Layout.preferredWidth: parent.width * 0.05
+                Layout.preferredHeight: buttonHeight
+                Layout.preferredWidth: buttonWidth
                 enabled: false
                 imageSource: "img/play.svg"
                 imageColor: buttonImageColor
                 onClicked: {
                     progressBar.value = progressBar.from
                     chartView.clearAllWords()
-
                     connectEnabled(true)
                     enabled = false
+                    elapsedTime.text = ""
                     stopButton.enabled = true
                     choiceButton.enabled = false
                     timeMs = new Date().getTime()
-                    var check = provider.start(fileDialog.fileUrl)
-                    if (check) {
-                        var error = qsTr(check + " Try to select another file.")
-                        messageBox.message = error
+                    var error = provider.start(fileDialog.fileUrl)
+                    if (error) {
+                        var message = qsTr(error + " Try to select another file.")
+                        messageBox.message = message
                         messageBox.open()
                     }
                 }
@@ -106,19 +114,20 @@ Item {
 
             ImageButton {
                 id: stopButton
-                Layout.preferredWidth: parent.width * 0.05
+                Layout.preferredWidth: buttonWidth
+                Layout.preferredHeight: buttonHeight
                 enabled: false
                 imageSource: "img/stop.svg"
                 imageColor: buttonImageColor
                 onClicked: {
-                    if (provider.stop()) {
-                        connectEnabled(false)
-                        chartView.clearAllWords()
-                        progressBar.value = progressBar.from
-                        elapsedTime.text = ""
-                        enabled = false
-                        playButton.enabled = true
-                    }
+                    provider.stop()
+                    connectEnabled(false)
+                    chartView.clearAllWords()
+                    progressBar.value = progressBar.from
+                    elapsedTime.text = ""
+                    choiceButton.enabled = true
+                    enabled = false
+                    playButton.enabled = true
                 }
             }
         }
@@ -126,8 +135,15 @@ Item {
         ProgressBar {
             id: progressBar
             Layout.fillWidth: true
+            Layout.preferredHeight: parent.height * 0.15
             from: 0
             to: 100
+
+            background: Rectangle {
+                width: parent.width
+                height: parent.height
+                color: Qt.rgba(0, 0, 0, 0.1)
+            }
 
             contentItem: Item {
                 width: parent.width
@@ -142,6 +158,7 @@ Item {
 
         RowLayout {
             width: parent.width
+            Layout.preferredHeight: parent.height * 0.5
 
             Text {
                 id: labelText
