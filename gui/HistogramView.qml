@@ -34,7 +34,7 @@ ChartView {
             var value = map[prop]
             if (value > maxValue)
                 maxValue = value
-            barSeries.insert(0, prop, [value]).color = Colorizer.colorizer(barSeries.count - 1)
+            barSeries.append(prop, [value]).color = Colorizer.colorizer(barSeries.count - 1)
         }
         if (valueAxis.max !== maxValue)
             valueAxis.max = maxValue
